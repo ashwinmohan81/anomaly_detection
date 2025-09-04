@@ -81,7 +81,11 @@ async def upload_dataset(file: UploadFile = File(...)):
         elif file.filename.endswith('.json'):
             df = pd.read_json(io.StringIO(content.decode('utf-8')))
         elif file.filename.endswith('.parquet'):
-            df = pd.read_parquet(io.BytesIO(content))
+            try:
+                df = pd.read_parquet(io.BytesIO(content))
+            except Exception as e:
+                # Fallback to CSV if parquet fails
+                raise HTTPException(status_code=400, detail=f"Parquet reading failed: {str(e)}")
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format")
         
@@ -100,7 +104,11 @@ async def upload_dataset(file: UploadFile = File(...)):
         
         # Store dataset temporarily (in production, use proper storage)
         dataset_id = f"dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        df.to_parquet(f"temp_{dataset_id}.parquet")
+        try:
+            df.to_parquet(f"temp_{dataset_id}.parquet")
+        except Exception as e:
+            # Fallback to CSV if parquet fails
+            df.to_csv(f"temp_{dataset_id}.csv", index=False)
         
         return {
             "dataset_id": dataset_id,
@@ -117,11 +125,15 @@ async def train_model(dataset_id: str, request: TrainingRequest):
     """Train an anomaly detection model."""
     try:
         # Load dataset
-        dataset_path = f"temp_{dataset_id}.parquet"
-        if not os.path.exists(dataset_path):
-            raise HTTPException(status_code=404, detail="Dataset not found")
+        dataset_path_parquet = f"temp_{dataset_id}.parquet"
+        dataset_path_csv = f"temp_{dataset_id}.csv"
         
-        df = pd.read_parquet(dataset_path)
+        if os.path.exists(dataset_path_parquet):
+            df = pd.read_parquet(dataset_path_parquet)
+        elif os.path.exists(dataset_path_csv):
+            df = pd.read_csv(dataset_path_csv)
+        else:
+            raise HTTPException(status_code=404, detail="Dataset not found")
         
         # Validate target column
         if request.target_column not in df.columns:
@@ -164,7 +176,10 @@ async def train_model(dataset_id: str, request: TrainingRequest):
         }
         
         # Clean up temporary dataset
-        os.remove(dataset_path)
+        if os.path.exists(dataset_path_parquet):
+            os.remove(dataset_path_parquet)
+        elif os.path.exists(dataset_path_csv):
+            os.remove(dataset_path_csv)
         
         return {
             "model_id": model_id,
