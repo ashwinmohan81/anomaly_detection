@@ -111,21 +111,53 @@ Train an anomaly detection model.
 **Response:**
 ```json
 {
-  "model_id": "model_isolation_forest_20240101_120000",
+  "model_id": "generic_isolation_forest_20240101_120000",
   "training_stats": {
-    "total_records": 1000,
-    "anomaly_count": 100,
-    "feature_count": 25,
-    "training_time": 2.5,
+    "n_samples": 1000,
+    "n_entities": 10,
+    "business_keys": ["ENTITY_001", "ENTITY_002", "ENTITY_003"],
+    "n_features": 69,
+    "feature_columns": ["value_change", "value_ma_5", "value_std_5", "cross_value_mean"],
+    "target_attributes": ["value", "rating", "size"],
+    "business_key_column": "entity_id",
+    "time_column": "date",
     "algorithm": "isolation_forest",
     "contamination": 0.1,
+    "training_date": "2024-01-01T12:00:00.000Z",
+    "anomalies_detected": 100,
+    "anomaly_count": 100,
     "anomaly_rate": 0.1,
-    "entity_count": 50,
-    "training_date": "2024-01-01T12:00:00.000Z"
+    "anomaly_analysis": {
+      "ENTITY_001": {
+        "anomaly_count": 10,
+        "anomaly_rate": 0.1,
+        "total_records": 100
+      }
+    }
   },
   "message": "Model trained successfully"
 }
 ```
+
+**Response Fields:**
+- `model_id` (string): Unique identifier for the trained model
+- `training_stats` (object): Detailed training statistics containing:
+  - `n_samples` (int): Total number of training samples
+  - `n_entities` (int): Number of unique business entities
+  - `business_keys` (array): List of all business entity IDs
+  - `n_features` (int): Number of features created
+  - `feature_columns` (array): List of feature column names
+  - `target_attributes` (array): List of target attributes used
+  - `business_key_column` (string): Name of the business key column
+  - `time_column` (string or null): Name of the time column (if used)
+  - `algorithm` (string): Algorithm used for training
+  - `contamination` (float): Contamination parameter used
+  - `training_date` (string): ISO timestamp of training completion
+  - `anomalies_detected` (int): Number of anomalies detected during training
+  - `anomaly_count` (int): Same as anomalies_detected
+  - `anomaly_rate` (float): Proportion of anomalies (0-1)
+  - `anomaly_analysis` (object): Analysis by entity with anomaly counts and rates
+- `message` (string): Success message
 
 #### **POST /predict** - Single Prediction
 Predict anomaly for a single data point.
@@ -153,6 +185,12 @@ Predict anomaly for a single data point.
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
+
+**Response Fields:**
+- `model_id` (string): ID of the model used for prediction
+- `prediction` (int): Prediction result (-1 for anomaly, 1 for normal)
+- `anomaly_score` (float): Confidence score for the prediction (0-1, higher = more anomalous)
+- `timestamp` (string): ISO timestamp of the prediction
 
 #### **POST /predict-batch** - Batch Prediction
 Predict anomalies for multiple data points.
@@ -183,23 +221,45 @@ Predict anomalies for multiple data points.
 {
   "model_id": "model_isolation_forest_20240101_120000",
   "predictions": {
-    "predictions": [-1, 1],
-    "anomaly_scores": [0.15, 0.85],
+    "predictions": [true, false],
+    "scores": [0.15, 0.85],
     "anomaly_count": 1,
-    "entity_analysis": {
+    "anomaly_rate": 0.5,
+    "prediction_analysis": {
       "ENTITY_001": {
         "anomaly_count": 1,
-        "anomaly_rate": 1.0
+        "anomaly_rate": 1.0,
+        "avg_score": 0.15,
+        "max_score": 0.15,
+        "min_score": 0.15
       },
       "ENTITY_002": {
         "anomaly_count": 0,
-        "anomaly_rate": 0.0
+        "anomaly_rate": 0.0,
+        "avg_score": 0.85,
+        "max_score": 0.85,
+        "min_score": 0.85
       }
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
+
+**Response Fields:**
+- `model_id` (string): ID of the model used for prediction
+- `predictions` (object): Prediction results object containing:
+  - `predictions` (array of booleans): Prediction results (true for anomaly, false for normal)
+  - `scores` (array of floats): Anomaly scores for each prediction (0-1, higher = more anomalous)
+  - `anomaly_count` (int): Total number of anomalies detected
+  - `anomaly_rate` (float): Proportion of predictions that are anomalies (0-1)
+  - `prediction_analysis` (object): Analysis by entity containing:
+    - `anomaly_count` (int): Number of anomalies for this entity
+    - `anomaly_rate` (float): Proportion of anomalies for this entity
+    - `avg_score` (float): Average anomaly score for this entity
+    - `max_score` (float): Maximum anomaly score for this entity
+    - `min_score` (float): Minimum anomaly score for this entity
+- `timestamp` (string): ISO timestamp of the prediction
 
 ### **Management Endpoints**
 
@@ -507,6 +567,24 @@ Visit `http://localhost:8000/docs` for interactive Swagger UI documentation with
 - **Request/response examples**
 - **Schema definitions**
 - **Authentication options**
+
+## 📋 **Response Format Notes**
+
+### **Prediction Values**
+- **Single Prediction**: Returns `-1` for anomaly, `1` for normal
+- **Batch Prediction**: Returns `true` for anomaly, `false` for normal (boolean array)
+- **Anomaly Scores**: Range from 0-1, where higher values indicate more anomalous behavior
+
+### **Model ID Format**
+- **Format**: `generic_{algorithm}_{timestamp}`
+- **Example**: `generic_isolation_forest_20240101_120000`
+- **Timestamp**: YYYYMMDD_HHMMSS format
+
+### **Feature Engineering**
+The API automatically creates features based on your target attributes:
+- **Statistical Features**: `{attr}_change`, `{attr}_ma_5`, `{attr}_std_5`, `{attr}_zscore_5`
+- **Cross-Entity Features**: `cross_{attr}_mean`, `cross_{attr}_std`, `{attr}_relative_position`
+- **Temporal Features**: `hour`, `day_of_week`, `month`, `is_weekend` (if time column provided)
 
 ## 🎯 **Ready to Use!**
 
