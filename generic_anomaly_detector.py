@@ -270,6 +270,7 @@ class GenericAnomalyDetector:
         # Store configuration
         self.target_attributes = target_attributes
         self.anomaly_labels = anomaly_labels
+        self.original_columns = df.columns.tolist()  # Store original columns for input attributes
         
         # Create features
         features_df = self._create_generic_features(df, business_key, target_attributes, time_column)
@@ -448,6 +449,27 @@ class GenericAnomalyDetector:
             low_conf = (entity_indicators == 'LOW_CONFIDENCE_ANOMALY').sum()
             normal = (entity_indicators == 'NORMAL').sum()
             
+            # Get input data attributes (only original columns, exclude feature engineering and internal columns)
+            # Get the original columns from the training data
+            original_columns = getattr(self, 'original_columns', [])
+            if not original_columns:
+                # Fallback: exclude known feature engineering patterns
+                feature_columns = [col for col in df.columns if any(col.startswith(prefix) for prefix in 
+                    ['_change', '_ma_', '_std_', '_zscore_', '_volatility_', '_momentum_', '_percentile_', 
+                     'cross_', '_relative_position', '_cross_zscore', 'hour', 'day_of_', 'month', 'quarter', 
+                     'year', 'is_', 'is_anomaly', 'anomaly_indicator'])]
+                original_columns = [col for col in df.columns if col not in feature_columns]
+            
+            input_attributes = {}
+            for col in original_columns:
+                if col != business_key and col in entity_data.columns:
+                    # Get the values for this entity
+                    values = entity_data[col].tolist()
+                    if len(values) == 1:
+                        input_attributes[col] = values[0]
+                    else:
+                        input_attributes[col] = values
+            
             analysis[entity] = {
                 'anomaly_count': int(entity_anomalies),
                 'anomaly_rate': float(entity_anomalies / len(entity_data)),
@@ -456,7 +478,8 @@ class GenericAnomalyDetector:
                     'medium_confidence_anomalies': int(medium_conf),
                     'low_confidence_anomalies': int(low_conf),
                     'normal_records': int(normal)
-                }
+                },
+                'input_attributes': input_attributes
             }
         
         return analysis

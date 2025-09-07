@@ -186,9 +186,18 @@ Predict anomaly for a single data point.
     "ENTITY_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.15,
-      "max_score": 0.15,
-      "min_score": 0.15,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1000,
+        "rating": 4.5,
+        "size": 5000,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
@@ -260,18 +269,36 @@ Predict anomalies for multiple data points.
     "ENTITY_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.15,
-      "max_score": 0.15,
-      "min_score": 0.15,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1000,
+        "rating": 4.5,
+        "size": 5000,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
       "anomaly_rate": 0.0,
-      "avg_score": 0.85,
-      "max_score": 0.85,
-      "min_score": 0.85,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 0,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 1
+      },
+      "input_attributes": {
+        "value": 2000,
+        "rating": 2.1,
+        "size": 2500,
+        "date": "2024-01-01"
+      },
       "predictions": [false],
       "anomaly_indicators": ["NORMAL"]
     }

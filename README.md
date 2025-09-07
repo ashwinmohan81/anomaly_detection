@@ -156,9 +156,18 @@ curl -X POST "http://localhost:8000/predict" \
     "ENTITY_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.15,
-      "max_score": 0.15,
-      "min_score": 0.15,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1000,
+        "rating": 4.5,
+        "size": 5000,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
@@ -217,18 +226,36 @@ curl -X POST "http://localhost:8000/predict-batch" \
     "ENTITY_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.15,
-      "max_score": 0.15,
-      "min_score": 0.15,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1000,
+        "rating": 4.5,
+        "size": 5000,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
       "anomaly_rate": 0.0,
-      "avg_score": 0.85,
-      "max_score": 0.85,
-      "min_score": 0.85,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 0,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 1
+      },
+      "input_attributes": {
+        "value": 2000,
+        "rating": 2.1,
+        "size": 2500,
+        "date": "2024-01-01"
+      },
       "predictions": [false],
       "anomaly_indicators": ["NORMAL"]
     }
@@ -269,27 +296,54 @@ When you send **exactly 1 row per entity ID** (common scenario):
     "FUND_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.85,
-      "max_score": 0.85,
-      "min_score": 0.85,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 0,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 1
+      },
+      "input_attributes": {
+        "value": 2000,
+        "rating": 2.1,
+        "size": 2500,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "scores": [0.85]
     },
     "FUND_002": {
       "anomaly_count": 0,
       "anomaly_rate": 0.0,
-      "avg_score": 0.15,
-      "max_score": 0.15,
-      "min_score": 0.15,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1000,
+        "rating": 4.5,
+        "size": 5000,
+        "date": "2024-01-01"
+      },
       "predictions": [false],
       "scores": [0.15]
     },
     "FUND_003": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.92,
-      "max_score": 0.92,
-      "min_score": 0.92,
+      "confidence_breakdown": {
+        "high_confidence_anomalies": 1,
+        "medium_confidence_anomalies": 0,
+        "low_confidence_anomalies": 0,
+        "normal_records": 0
+      },
+      "input_attributes": {
+        "value": 1500,
+        "rating": 1.5,
+        "size": 8000,
+        "date": "2024-01-01"
+      },
       "predictions": [true],
       "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
@@ -305,6 +359,7 @@ When you send **exactly 1 row per entity ID** (common scenario):
   - `anomaly_count`: 0 or 1 (since only 1 row per entity)
   - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
   - `confidence_breakdown`: Count of different confidence levels
+  - `input_attributes`: Original input data values for this entity
   - `predictions`: Array of boolean predictions for this entity
   - `anomaly_indicators`: Array of clear anomaly indicators for this entity
 
