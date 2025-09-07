@@ -14,7 +14,6 @@ NC='\033[0m' # No Color
 
 # Default values
 MODE="single"
-API="main"
 PORT="8000"
 BUILD_ARGS=""
 
@@ -43,7 +42,6 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  -m, --mode MODE        Deployment mode: single, multi (default: single)"
-    echo "  -a, --api API          API to run: main, generic (default: main)"
     echo "  -p, --port PORT        Port to expose (default: 8000)"
     echo "  -b, --build            Force rebuild image"
     echo "  -d, --detach           Run in background"
@@ -52,10 +50,10 @@ show_usage() {
     echo "  -h, --help             Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                                    # Run main API on port 8000"
-    echo "  $0 -a generic -p 8001                # Run generic API on port 8001"
-    echo "  $0 -m multi                          # Run both APIs with full stack"
-    echo "  $0 -b -a main                        # Rebuild and run main API"
+    echo "  $0                                    # Run API on port 8000"
+    echo "  $0 -p 8001                           # Run API on port 8001"
+    echo "  $0 -m multi                          # Run with full monitoring stack"
+    echo "  $0 -b                                # Rebuild and run API"
     echo "  $0 -s                                # Stop all containers"
     echo "  $0 -c                                # Clean up everything"
 }
@@ -66,10 +64,6 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -m|--mode)
             MODE="$2"
-            shift 2
-            ;;
-        -a|--api)
-            API="$2"
             shift 2
             ;;
         -p|--port)
@@ -89,7 +83,7 @@ while [[ $# -gt 0 ]]; do
             print_status "Stopping all anomaly detection containers..."
             docker-compose -f docker-compose.yml down 2>/dev/null || true
             docker-compose -f docker-compose.multi.yml down 2>/dev/null || true
-            docker stop anomaly-main-api anomaly-generic-api 2>/dev/null || true
+            docker stop anomaly-detection-api 2>/dev/null || true
             print_status "All containers stopped"
             exit 0
             ;;
@@ -98,8 +92,8 @@ while [[ $# -gt 0 ]]; do
             print_status "Cleaning up containers and images..."
             docker-compose -f docker-compose.yml down --volumes --remove-orphans 2>/dev/null || true
             docker-compose -f docker-compose.multi.yml down --volumes --remove-orphans 2>/dev/null || true
-            docker stop anomaly-main-api anomaly-generic-api 2>/dev/null || true
-            docker rm anomaly-main-api anomaly-generic-api 2>/dev/null || true
+            docker stop anomaly-detection-api 2>/dev/null || true
+            docker rm anomaly-detection-api 2>/dev/null || true
             docker rmi anomaly_detection_project:latest 2>/dev/null || true
             print_status "Cleanup completed"
             exit 0
@@ -121,11 +115,6 @@ print_header
 # Validate inputs
 if [[ "$MODE" != "single" && "$MODE" != "multi" ]]; then
     print_error "Invalid mode: $MODE. Use 'single' or 'multi'"
-    exit 1
-fi
-
-if [[ "$API" != "main" && "$API" != "generic" ]]; then
-    print_error "Invalid API: $API. Use 'main' or 'generic'"
     exit 1
 fi
 
@@ -155,36 +144,24 @@ if [[ "$MODE" == "single" ]]; then
     print_status "Deploying single API mode..."
     
     # Stop any existing containers
-    docker stop anomaly-$API-api 2>/dev/null || true
-    docker rm anomaly-$API-api 2>/dev/null || true
-    
-    # Determine command based on API
-    if [[ "$API" == "main" ]]; then
-        CMD="uvicorn main:app --host 0.0.0.0 --port 8000"
-        EXPOSED_PORT="8000"
-    else
-        CMD="uvicorn generic_api:app --host 0.0.0.0 --port 8001"
-        EXPOSED_PORT="8001"
-    fi
+    docker stop anomaly-detection-api 2>/dev/null || true
+    docker rm anomaly-detection-api 2>/dev/null || true
     
     # Run container
-    print_status "Starting $API API on port $PORT..."
+    print_status "Starting anomaly detection API on port $PORT..."
     docker run $DETACH \
-        --name anomaly-$API-api \
-        -p $PORT:$EXPOSED_PORT \
+        --name anomaly-detection-api \
+        -p $PORT:8000 \
         -v $(pwd)/models:/app/models \
         -v $(pwd)/temp:/app/temp \
-        anomaly_detection_project:latest \
-        $CMD
+        anomaly_detection_project:latest
     
     if [[ $? -eq 0 ]]; then
-        print_status "$API API is running on http://localhost:$PORT"
+        print_status "Anomaly detection API is running on http://localhost:$PORT"
         print_status "Health check: http://localhost:$PORT/health"
-        if [[ "$API" == "generic" ]]; then
-            print_status "API documentation: http://localhost:$PORT/docs"
-        fi
+        print_status "API documentation: http://localhost:$PORT/docs"
     else
-        print_error "Failed to start $API API"
+        print_error "Failed to start anomaly detection API"
         exit 1
     fi
 
@@ -200,8 +177,7 @@ else
     
     if [[ $? -eq 0 ]]; then
         print_status "All services are running:"
-        print_status "  Main API: http://localhost:8000"
-        print_status "  Generic API: http://localhost:8001"
+        print_status "  Anomaly Detection API: http://localhost:8000"
         print_status "  Nginx Load Balancer: http://localhost:80"
         print_status "  Prometheus: http://localhost:9090"
         print_status "  Grafana: http://localhost:3000 (admin/admin)"
