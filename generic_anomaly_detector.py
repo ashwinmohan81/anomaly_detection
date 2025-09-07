@@ -130,8 +130,10 @@ class GenericAnomalyDetector:
         for time_period in features_df[group_by_col].unique():
             period_data = features_df[features_df[group_by_col] == time_period].copy()
             
-            if len(period_data) < 2:  # Need at least 2 entities
-                continue
+            # If only one entity, create cross-entity features with just that entity's data
+            if len(period_data) < 2:
+                # For single entity, use its own data as the "cross-entity" reference
+                period_data = features_df.copy()
             
             # Calculate cross-entity statistics for each target attribute
             for attr in target_attributes:
@@ -220,7 +222,8 @@ class GenericAnomalyDetector:
         elif self.algorithm == 'local_outlier_factor':
             return LocalOutlierFactor(
                 contamination=self.contamination,
-                n_neighbors=20
+                n_neighbors=20,
+                novelty=True  # Required for prediction on new data
             )
         elif self.algorithm == 'random_forest':
             return RandomForestClassifier(
