@@ -12,6 +12,16 @@ import json
 
 from generic_anomaly_detector import GenericAnomalyDetector
 
+def serialize_dates(obj):
+    """Custom JSON serializer for datetime objects."""
+    if isinstance(obj, pd.Timestamp):
+        return obj.strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, np.datetime64):
+        return pd.Timestamp(obj).strftime('%Y-%m-%d %H:%M:%S')
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -106,6 +116,10 @@ async def upload_dataset(file: UploadFile = File(...)):
             "categorical_columns": df.select_dtypes(include=['object']).columns.tolist(),
             "datetime_columns": df.select_dtypes(include=['datetime64']).columns.tolist()
         }
+        
+        # Convert any datetime columns to strings for JSON serialization
+        for col in df.select_dtypes(include=['datetime64']).columns:
+            df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
         
         # Store dataset temporarily (in production, use proper storage)
         dataset_id = f"dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

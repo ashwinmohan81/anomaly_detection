@@ -176,7 +176,17 @@ class GenericAnomalyDetector:
         
         # Convert to datetime if not already
         if not pd.api.types.is_datetime64_any_dtype(features_df[time_column]):
-            features_df[time_column] = pd.to_datetime(features_df[time_column])
+            features_df[time_column] = pd.to_datetime(features_df[time_column], errors='coerce')
+        
+        # Ensure time column is timezone-naive for consistent processing
+        if features_df[time_column].dt.tz is not None:
+            features_df[time_column] = features_df[time_column].dt.tz_localize(None)
+        
+        # Handle any NaT values that might have been created
+        if features_df[time_column].isna().any():
+            logging.warning(f"Found {features_df[time_column].isna().sum()} NaT values in time column, filling with median")
+            median_time = features_df[time_column].median()
+            features_df[time_column] = features_df[time_column].fillna(median_time)
         
         # Basic temporal features
         features_df['hour'] = features_df[time_column].dt.hour
