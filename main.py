@@ -245,11 +245,11 @@ async def predict_anomaly(request: GenericPredictionRequest):
         # Get entity ID from the input data
         entity_id = request.data[metadata['business_key']]
         
-        # Enhance prediction_analysis with detailed predictions and scores
+        # Enhance prediction_analysis with detailed predictions and anomaly indicators
         enhanced_prediction_analysis = result['prediction_analysis'].copy()
         enhanced_prediction_analysis[entity_id].update({
             "predictions": [result['predictions'][0]],
-            "scores": [result['scores'][0]]
+            "anomaly_indicators": [result['anomaly_indicators'][0]]
         })
         
         return {
@@ -298,7 +298,7 @@ async def predict_batch(request: GenericBatchPredictionRequest):
         
         # Handle pagination and inclusion options
         predictions = result['predictions']
-        scores = result['scores']
+        anomaly_indicators = result['anomaly_indicators']
         
         # Calculate pagination
         total_records = len(predictions)
@@ -316,21 +316,21 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             }
         })
         
-        # Group predictions and scores by entity ID
+        # Group predictions and anomaly indicators by entity ID
         entity_predictions = {}
-        entity_scores = {}
+        entity_indicators = {}
         
-        for i, (prediction, score) in enumerate(zip(predictions, scores)):
+        for i, (prediction, indicator) in enumerate(zip(predictions, anomaly_indicators)):
             entity_id = df.iloc[i][metadata['business_key']]
             
             if entity_id not in entity_predictions:
                 entity_predictions[entity_id] = []
-                entity_scores[entity_id] = []
+                entity_indicators[entity_id] = []
             
             entity_predictions[entity_id].append(prediction)
-            entity_scores[entity_id].append(score)
+            entity_indicators[entity_id].append(indicator)
         
-        # Enhance prediction_analysis with detailed predictions and scores
+        # Enhance prediction_analysis with detailed predictions and anomaly indicators
         enhanced_prediction_analysis = result['prediction_analysis'].copy()
         
         for entity_id in enhanced_prediction_analysis:
@@ -339,10 +339,10 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             else:
                 enhanced_prediction_analysis[entity_id]["predictions"] = None
                 
-            if request.include_scores and entity_id in entity_scores:
-                enhanced_prediction_analysis[entity_id]["scores"] = entity_scores[entity_id]
+            if request.include_scores and entity_id in entity_indicators:
+                enhanced_prediction_analysis[entity_id]["anomaly_indicators"] = entity_indicators[entity_id]
             else:
-                enhanced_prediction_analysis[entity_id]["scores"] = None
+                enhanced_prediction_analysis[entity_id]["anomaly_indicators"] = None
         
         response["prediction_analysis"] = enhanced_prediction_analysis
         

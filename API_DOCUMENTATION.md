@@ -190,7 +190,7 @@ Predict anomaly for a single data point.
       "max_score": 0.15,
       "min_score": 0.15,
       "predictions": [true],
-      "scores": [0.15]
+      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -264,7 +264,7 @@ Predict anomalies for multiple data points.
       "max_score": 0.15,
       "min_score": 0.15,
       "predictions": [true],
-      "scores": [0.15]
+      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
@@ -273,7 +273,7 @@ Predict anomalies for multiple data points.
       "max_score": 0.85,
       "min_score": 0.85,
       "predictions": [false],
-      "scores": [0.85]
+      "anomaly_indicators": ["NORMAL"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"

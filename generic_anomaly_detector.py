@@ -390,35 +390,48 @@ class GenericAnomalyDetector:
         
         is_anomaly = predictions == -1
         
-        # Get anomaly scores
-        if hasattr(self.model, 'score_samples'):
-            scores = self.model.score_samples(X_scaled)
-        elif hasattr(self.model, 'predict_proba'):
-            # For supervised models, use probability of anomaly class
-            proba = self.model.predict_proba(X_scaled)
-            if proba.shape[1] == 2:  # Binary classification
-                scores = proba[:, 1]  # Probability of anomaly class
+        # Create anomaly indicators (simplified from scores)
+        anomaly_indicators = []
+        for i, is_anom in enumerate(is_anomaly):
+            if is_anom:
+                # Get confidence level for anomalies
+                if hasattr(self.model, 'score_samples'):
+                    score = self.model.score_samples(X_scaled[i:i+1])[0]
+                    # Convert to confidence level (higher absolute value = more confident)
+                    confidence = min(abs(score) * 2, 1.0)  # Scale to 0-1
+                elif hasattr(self.model, 'predict_proba'):
+                    proba = self.model.predict_proba(X_scaled[i:i+1])
+                    confidence = proba[0, 1] if proba.shape[1] == 2 else 0.5
+                else:
+                    confidence = 0.8  # Default confidence for anomalies
+                
+                if confidence > 0.8:
+                    indicator = "HIGH_CONFIDENCE_ANOMALY"
+                elif confidence > 0.6:
+                    indicator = "MEDIUM_CONFIDENCE_ANOMALY"
+                else:
+                    indicator = "LOW_CONFIDENCE_ANOMALY"
             else:
-                scores = np.zeros(len(X_scaled))
-        else:
-            scores = -self.model.negative_outlier_factor_
+                indicator = "NORMAL"
+            
+            anomaly_indicators.append(indicator)
         
         # Analyze predictions by entity
-        prediction_analysis = self._analyze_predictions_by_entity(features_df, business_key, is_anomaly, scores)
+        prediction_analysis = self._analyze_predictions_by_entity(features_df, business_key, is_anomaly, anomaly_indicators)
         
         return {
             'predictions': is_anomaly.tolist(),
-            'scores': scores.tolist(),
+            'anomaly_indicators': anomaly_indicators,
             'anomaly_count': int(np.sum(is_anomaly)),
             'anomaly_rate': float(np.mean(is_anomaly)),
             'prediction_analysis': prediction_analysis
         }
     
     def _analyze_predictions_by_entity(self, df: pd.DataFrame, business_key: str, 
-                                     is_anomaly: np.ndarray, scores: np.ndarray) -> Dict[str, Any]:
+                                     is_anomaly: np.ndarray, anomaly_indicators: list) -> Dict[str, Any]:
         """Analyze predictions by business entity."""
         df['is_anomaly'] = is_anomaly
-        df['anomaly_score'] = scores
+        df['anomaly_indicator'] = anomaly_indicators
         
         analysis = {}
         for entity in df[business_key].unique():
@@ -427,14 +440,23 @@ class GenericAnomalyDetector:
                 continue
                 
             entity_anomalies = entity_data['is_anomaly'].sum()
-            entity_scores = entity_data['anomaly_score']
+            entity_indicators = entity_data['anomaly_indicator']
+            
+            # Count confidence levels
+            high_conf = (entity_indicators == 'HIGH_CONFIDENCE_ANOMALY').sum()
+            medium_conf = (entity_indicators == 'MEDIUM_CONFIDENCE_ANOMALY').sum()
+            low_conf = (entity_indicators == 'LOW_CONFIDENCE_ANOMALY').sum()
+            normal = (entity_indicators == 'NORMAL').sum()
             
             analysis[entity] = {
                 'anomaly_count': int(entity_anomalies),
                 'anomaly_rate': float(entity_anomalies / len(entity_data)),
-                'avg_score': float(entity_scores.mean()),
-                'max_score': float(entity_scores.max()),
-                'min_score': float(entity_scores.min())
+                'confidence_breakdown': {
+                    'high_confidence_anomalies': int(high_conf),
+                    'medium_confidence_anomalies': int(medium_conf),
+                    'low_confidence_anomalies': int(low_conf),
+                    'normal_records': int(normal)
+                }
             }
         
         return analysis
@@ -464,7 +486,7 @@ class GenericAnomalyDetector:
             df[group_by_col] = 0
         
         df['is_anomaly'] = predictions['predictions']
-        df['anomaly_score'] = predictions['scores']
+        df['anomaly_indicator'] = predictions['anomaly_indicators']
         
         cross_entity_analysis = {}
         

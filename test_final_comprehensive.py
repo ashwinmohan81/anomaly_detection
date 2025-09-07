@@ -108,7 +108,7 @@ class TestFinalComprehensive(unittest.TestCase):
                 )
                 
                 self.assertIn('predictions', result)
-                self.assertIn('scores', result)
+                self.assertIn('anomaly_indicators', result)
                 self.assertIn('anomaly_count', result)
                 self.assertIn('anomaly_rate', result)
                 self.assertIn('prediction_analysis', result)
@@ -144,7 +144,7 @@ class TestFinalComprehensive(unittest.TestCase):
         )
         
         self.assertEqual(len(result['predictions']), 3)
-        self.assertEqual(len(result['scores']), 3)
+        self.assertEqual(len(result['anomaly_indicators']), 3)
         self.assertGreaterEqual(result['anomaly_count'], 0)
         self.assertLessEqual(result['anomaly_rate'], 1.0)
     
@@ -377,13 +377,13 @@ class TestFinalComprehensive(unittest.TestCase):
         
         # Both should have the same structure
         self.assertIn('predictions', single_result)
-        self.assertIn('scores', single_result)
+        self.assertIn('anomaly_indicators', single_result)
         self.assertIn('anomaly_count', single_result)
         self.assertIn('anomaly_rate', single_result)
         self.assertIn('prediction_analysis', single_result)
         
         self.assertIn('predictions', batch_result)
-        self.assertIn('scores', batch_result)
+        self.assertIn('anomaly_indicators', batch_result)
         self.assertIn('anomaly_count', batch_result)
         self.assertIn('anomaly_rate', batch_result)
         self.assertIn('prediction_analysis', batch_result)

@@ -160,7 +160,7 @@ curl -X POST "http://localhost:8000/predict" \
       "max_score": 0.15,
       "min_score": 0.15,
       "predictions": [true],
-      "scores": [0.15]
+      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -221,7 +221,7 @@ curl -X POST "http://localhost:8000/predict-batch" \
       "max_score": 0.15,
       "min_score": 0.15,
       "predictions": [true],
-      "scores": [0.15]
+      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
@@ -230,7 +230,7 @@ curl -X POST "http://localhost:8000/predict-batch" \
       "max_score": 0.85,
       "min_score": 0.85,
       "predictions": [false],
-      "scores": [0.85]
+      "anomaly_indicators": ["NORMAL"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -291,7 +291,7 @@ When you send **exactly 1 row per entity ID** (common scenario):
       "max_score": 0.92,
       "min_score": 0.92,
       "predictions": [true],
-      "scores": [0.92]
+      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -304,9 +304,15 @@ When you send **exactly 1 row per entity ID** (common scenario):
 - **`prediction_analysis`**: Per-entity breakdown where each entity shows:
   - `anomaly_count`: 0 or 1 (since only 1 row per entity)
   - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
-  - `avg_score`, `max_score`, `min_score`: All identical (since only 1 row per entity)
+  - `confidence_breakdown`: Count of different confidence levels
   - `predictions`: Array of boolean predictions for this entity
-  - `scores`: Array of anomaly scores for this entity
+  - `anomaly_indicators`: Array of clear anomaly indicators for this entity
+
+**Anomaly Indicators:**
+- **`NORMAL`**: Record is normal (not anomalous)
+- **`LOW_CONFIDENCE_ANOMALY`**: Anomaly detected with low confidence
+- **`MEDIUM_CONFIDENCE_ANOMALY`**: Anomaly detected with medium confidence  
+- **`HIGH_CONFIDENCE_ANOMALY`**: Anomaly detected with high confidence
 
 **Benefits of Restructured Format:**
 - **Cleaner Structure**: Only summary stats at top level, details in prediction_analysis
