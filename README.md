@@ -151,8 +151,12 @@ curl -X POST "http://localhost:8000/predict" \
 {
   "model_id": "generic_isolation_forest_20240101_120000",
   "predictions": {
-    "predictions": [true],
-    "scores": [0.15],
+    "predictions_by_entity": {
+      "ENTITY_001": [true]
+    },
+    "scores_by_entity": {
+      "ENTITY_001": [0.15]
+    },
     "anomaly_count": 1,
     "anomaly_rate": 1.0,
     "prediction_analysis": {
@@ -176,7 +180,34 @@ curl -X POST "http://localhost:8000/predict-batch" \
     "data": [
       {"entity_id": "ENTITY_001", "value": 1000, "rating": 4.5, "date": "2024-01-01"},
       {"entity_id": "ENTITY_002", "value": 500, "rating": 2.1, "date": "2024-01-01"}
-    ]
+    ],
+    "include_predictions": true,
+    "include_scores": true,
+    "page": 1,
+    "page_size": 100,
+    "summary_only": false
+  }'
+```
+
+#### **Large Dataset Options**
+```bash
+# Summary only (no detailed predictions/scores)
+curl -X POST "http://localhost:8000/predict-batch" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "your_model_id",
+    "data": [...],
+    "summary_only": true
+  }'
+
+# Paginated results (first 100 records)
+curl -X POST "http://localhost:8000/predict-batch" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "your_model_id",
+    "data": [...],
+    "page": 1,
+    "page_size": 100
   }'
 ```
 
@@ -233,8 +264,16 @@ When you send **exactly 1 row per entity ID** (common scenario):
 {
   "model_id": "generic_isolation_forest_20240101_120000",
   "predictions": {
-    "predictions": [true, false, true],
-    "scores": [0.85, 0.15, 0.92],
+    "predictions_by_entity": {
+      "FUND_001": [true],
+      "FUND_002": [false],
+      "FUND_003": [true]
+    },
+    "scores_by_entity": {
+      "FUND_001": [0.85],
+      "FUND_002": [0.15],
+      "FUND_003": [0.92]
+    },
     "anomaly_count": 2,
     "anomaly_rate": 0.67,
     "prediction_analysis": {
@@ -266,14 +305,20 @@ When you send **exactly 1 row per entity ID** (common scenario):
 ```
 
 **Key Metrics Explained:**
-- **`predictions`**: `[true, false, true]` - one boolean per entity (FUND_001=anomalous, FUND_002=normal, FUND_003=anomalous)
-- **`scores`**: `[0.85, 0.15, 0.92]` - confidence level for each entity (higher = more anomalous)
+- **`predictions_by_entity`**: Predictions grouped by entity ID (FUND_001=[true], FUND_002=[false], FUND_003=[true])
+- **`scores_by_entity`**: Scores grouped by entity ID (FUND_001=[0.85], FUND_002=[0.15], FUND_003=[0.92])
 - **`anomaly_count`**: `2` - total entities that are anomalous
 - **`anomaly_rate`**: `0.67` - percentage of entities that are anomalous (67%)
 - **`prediction_analysis`**: Per-entity breakdown where each entity shows:
   - `anomaly_count`: 0 or 1 (since only 1 row per entity)
   - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
   - `avg_score`, `max_score`, `min_score`: All identical (since only 1 row per entity)
+
+**Benefits of Entity-Grouped Format:**
+- **Easy Entity Lookup**: Find results for specific entities quickly
+- **Reduced Response Size**: No large arrays for thousands of records
+- **Better Organization**: Predictions and scores grouped by business key
+- **Scalable**: Works efficiently with large datasets
 
 ### **Real-World Use Cases**
 
