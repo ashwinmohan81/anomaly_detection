@@ -6,9 +6,10 @@ Works with any business keys and attributes to find anomalies
 
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import IsolationForest
+from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.svm import OneClassSVM
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.decomposition import PCA
 from datetime import datetime, timedelta
@@ -23,7 +24,7 @@ class GenericAnomalyDetector:
         Generic anomaly detector for any business keys and attributes.
         
         Args:
-            algorithm: 'isolation_forest', 'one_class_svm', 'local_outlier_factor'
+            algorithm: 'isolation_forest', 'one_class_svm', 'local_outlier_factor', 'random_forest', 'logistic_regression'
             contamination: Expected proportion of anomalies
         """
         self.algorithm = algorithm
@@ -211,6 +212,18 @@ class GenericAnomalyDetector:
                 contamination=self.contamination,
                 n_neighbors=20
             )
+        elif self.algorithm == 'random_forest':
+            return RandomForestClassifier(
+                n_estimators=100,
+                random_state=42,
+                class_weight='balanced'
+            )
+        elif self.algorithm == 'logistic_regression':
+            return LogisticRegression(
+                random_state=42,
+                class_weight='balanced',
+                max_iter=1000
+            )
         else:
             raise ValueError(f"Unknown algorithm: {self.algorithm}")
     
@@ -218,7 +231,8 @@ class GenericAnomalyDetector:
               business_key: str,
               target_attributes: List[str],
               feature_columns: Optional[List[str]] = None,
-              time_column: Optional[str] = None):
+              time_column: Optional[str] = None,
+              anomaly_labels: Optional[str] = None):
         """
         Train the generic anomaly detection model.
         
@@ -228,17 +242,21 @@ class GenericAnomalyDetector:
             target_attributes: List of columns to detect anomalies in
             feature_columns: List of feature columns (if None, auto-select)
             time_column: Optional time column for temporal features
+            anomaly_labels: Column name with true anomaly labels (0/1) for supervised learning
         """
         logging.info(f"Training generic {self.algorithm} model on {len(df)} records")
         
         # Validate input data
         required_cols = [business_key] + target_attributes
+        if anomaly_labels:
+            required_cols.append(anomaly_labels)
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             raise ValueError(f"Missing required columns: {missing_cols}")
         
         # Store configuration
         self.target_attributes = target_attributes
+        self.anomaly_labels = anomaly_labels
         
         # Create features
         features_df = self._create_generic_features(df, business_key, target_attributes, time_column)
@@ -263,10 +281,26 @@ class GenericAnomalyDetector:
         
         # Train model
         self.model = self._get_model()
-        self.model.fit(X_scaled)
+        
+        if anomaly_labels and self.algorithm in ['random_forest', 'logistic_regression']:
+            # Supervised learning
+            y = df[anomaly_labels].values
+            self.model.fit(X_scaled, y)
+            logging.info(f"Trained supervised {self.algorithm} model with {len(y)} labeled samples")
+        else:
+            # Unsupervised learning
+            self.model.fit(X_scaled)
+            logging.info(f"Trained unsupervised {self.algorithm} model")
         
         # Calculate performance
-        predictions = self.model.predict(X_scaled)
+        if anomaly_labels and self.algorithm in ['random_forest', 'logistic_regression']:
+            # Supervised models predict 0/1, convert to -1/1 for consistency
+            predictions = self.model.predict(X_scaled)
+            predictions = np.where(predictions == 1, -1, 1)  # 1->-1 (anomaly), 0->1 (normal)
+        else:
+            # Unsupervised models already predict -1/1
+            predictions = self.model.predict(X_scaled)
+        
         anomaly_count = np.sum(predictions == -1)
         
         # Analyze anomalies by business key
@@ -335,11 +369,24 @@ class GenericAnomalyDetector:
         
         # Make predictions
         predictions = self.model.predict(X_scaled)
+        
+        # Handle supervised vs unsupervised model outputs
+        if self.algorithm in ['random_forest', 'logistic_regression']:
+            # Supervised models predict 0/1, convert to -1/1 for consistency
+            predictions = np.where(predictions == 1, -1, 1)  # 1->-1 (anomaly), 0->1 (normal)
+        
         is_anomaly = predictions == -1
         
         # Get anomaly scores
         if hasattr(self.model, 'score_samples'):
             scores = self.model.score_samples(X_scaled)
+        elif hasattr(self.model, 'predict_proba'):
+            # For supervised models, use probability of anomaly class
+            proba = self.model.predict_proba(X_scaled)
+            if proba.shape[1] == 2:  # Binary classification
+                scores = proba[:, 1]  # Probability of anomaly class
+            else:
+                scores = np.zeros(len(X_scaled))
         else:
             scores = -self.model.negative_outlier_factor_
         
