@@ -168,8 +168,6 @@ curl -X POST "http://localhost:8000/predict" \
         "size": 5000,
         "date": "2024-01-01"
       },
-      "predictions": [true],
-      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -238,8 +236,6 @@ curl -X POST "http://localhost:8000/predict-batch" \
         "size": 5000,
         "date": "2024-01-01"
       },
-      "predictions": [true],
-      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
@@ -256,8 +252,6 @@ curl -X POST "http://localhost:8000/predict-batch" \
         "size": 2500,
         "date": "2024-01-01"
       },
-      "predictions": [false],
-      "anomaly_indicators": ["NORMAL"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -344,8 +338,6 @@ When you send **exactly 1 row per entity ID** (common scenario):
         "size": 8000,
         "date": "2024-01-01"
       },
-      "predictions": [true],
-      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -360,8 +352,6 @@ When you send **exactly 1 row per entity ID** (common scenario):
   - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
   - `confidence_breakdown`: Count of different confidence levels
   - `input_attributes`: Original input data values for this entity
-  - `predictions`: Array of boolean predictions for this entity
-  - `anomaly_indicators`: Array of clear anomaly indicators for this entity
 
 **Anomaly Indicators:**
 - **`NORMAL`**: Record is normal (not anomalous)

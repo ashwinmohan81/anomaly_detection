@@ -62,8 +62,6 @@ class GenericPredictionRequest(BaseModel):
 class GenericBatchPredictionRequest(BaseModel):
     model_id: str
     data: List[Dict[str, Any]]
-    include_predictions: Optional[bool] = True  # Whether to include full predictions array
-    include_scores: Optional[bool] = True      # Whether to include full scores array
     page: Optional[int] = 1                    # Page number for pagination
     page_size: Optional[int] = 100             # Number of records per page
     summary_only: Optional[bool] = False       # Return only summary statistics
@@ -245,12 +243,8 @@ async def predict_anomaly(request: GenericPredictionRequest):
         # Get entity ID from the input data
         entity_id = request.data[metadata['business_key']]
         
-        # Enhance prediction_analysis with detailed predictions and anomaly indicators
+        # Use prediction_analysis as-is (no need to add predictions/indicators arrays)
         enhanced_prediction_analysis = result['prediction_analysis'].copy()
-        enhanced_prediction_analysis[entity_id].update({
-            "predictions": [result['predictions'][0]],
-            "anomaly_indicators": [result['anomaly_indicators'][0]]
-        })
         
         return {
             "model_id": request.model_id,
@@ -296,53 +290,20 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             response["prediction_analysis"] = result['prediction_analysis']
             return response
         
-        # Handle pagination and inclusion options
-        predictions = result['predictions']
-        anomaly_indicators = result['anomaly_indicators']
-        
-        # Calculate pagination
-        total_records = len(predictions)
-        start_idx = (request.page - 1) * request.page_size
-        end_idx = min(start_idx + request.page_size, total_records)
-        
         # Add pagination info
+        total_records = len(request.data)
         response.update({
             "pagination": {
                 "page": request.page,
                 "page_size": request.page_size,
                 "total_pages": (total_records + request.page_size - 1) // request.page_size,
-                "has_next": end_idx < total_records,
+                "has_next": request.page * request.page_size < total_records,
                 "has_previous": request.page > 1
             }
         })
         
-        # Group predictions and anomaly indicators by entity ID
-        entity_predictions = {}
-        entity_indicators = {}
-        
-        for i, (prediction, indicator) in enumerate(zip(predictions, anomaly_indicators)):
-            entity_id = df.iloc[i][metadata['business_key']]
-            
-            if entity_id not in entity_predictions:
-                entity_predictions[entity_id] = []
-                entity_indicators[entity_id] = []
-            
-            entity_predictions[entity_id].append(prediction)
-            entity_indicators[entity_id].append(indicator)
-        
-        # Enhance prediction_analysis with detailed predictions and anomaly indicators
+        # Use prediction_analysis as-is (no need to add predictions/indicators arrays)
         enhanced_prediction_analysis = result['prediction_analysis'].copy()
-        
-        for entity_id in enhanced_prediction_analysis:
-            if request.include_predictions and entity_id in entity_predictions:
-                enhanced_prediction_analysis[entity_id]["predictions"] = entity_predictions[entity_id]
-            else:
-                enhanced_prediction_analysis[entity_id]["predictions"] = None
-                
-            if request.include_scores and entity_id in entity_indicators:
-                enhanced_prediction_analysis[entity_id]["anomaly_indicators"] = entity_indicators[entity_id]
-            else:
-                enhanced_prediction_analysis[entity_id]["anomaly_indicators"] = None
         
         response["prediction_analysis"] = enhanced_prediction_analysis
         

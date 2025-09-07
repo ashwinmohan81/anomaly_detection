@@ -198,8 +198,6 @@ Predict anomaly for a single data point.
         "size": 5000,
         "date": "2024-01-01"
       },
-      "predictions": [true],
-      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -281,8 +279,6 @@ Predict anomalies for multiple data points.
         "size": 5000,
         "date": "2024-01-01"
       },
-      "predictions": [true],
-      "anomaly_indicators": ["HIGH_CONFIDENCE_ANOMALY"]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
@@ -299,8 +295,6 @@ Predict anomalies for multiple data points.
         "size": 2500,
         "date": "2024-01-01"
       },
-      "predictions": [false],
-      "anomaly_indicators": ["NORMAL"]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
