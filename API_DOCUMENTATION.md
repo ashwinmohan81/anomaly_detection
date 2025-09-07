@@ -179,17 +179,39 @@ Predict anomaly for a single data point.
 **Response:**
 ```json
 {
-  "model_id": "model_isolation_forest_20240101_120000",
-  "prediction": -1,
-  "anomaly_score": 0.15,
+  "model_id": "generic_isolation_forest_20240101_120000",
+  "predictions": {
+    "predictions": [true],
+    "scores": [0.15],
+    "anomaly_count": 1,
+    "anomaly_rate": 1.0,
+    "prediction_analysis": {
+      "ENTITY_001": {
+        "anomaly_count": 1,
+        "anomaly_rate": 1.0,
+        "avg_score": 0.15,
+        "max_score": 0.15,
+        "min_score": 0.15
+      }
+    }
+  },
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
 
 **Response Fields:**
 - `model_id` (string): ID of the model used for prediction
-- `prediction` (int): Prediction result (-1 for anomaly, 1 for normal)
-- `anomaly_score` (float): Confidence score for the prediction (0-1, higher = more anomalous)
+- `predictions` (object): Prediction results object containing:
+  - `predictions` (array of booleans): Prediction results (true for anomaly, false for normal)
+  - `scores` (array of floats): Anomaly scores for each prediction (0-1, higher = more anomalous)
+  - `anomaly_count` (int): Total number of anomalies detected
+  - `anomaly_rate` (float): Proportion of predictions that are anomalies (0-1)
+  - `prediction_analysis` (object): Analysis by entity containing:
+    - `anomaly_count` (int): Number of anomalies for this entity
+    - `anomaly_rate` (float): Proportion of anomalies for this entity
+    - `avg_score` (float): Average anomaly score for this entity
+    - `max_score` (float): Maximum anomaly score for this entity
+    - `min_score` (float): Minimum anomaly score for this entity
 - `timestamp` (string): ISO timestamp of the prediction
 
 #### **POST /predict-batch** - Batch Prediction
@@ -571,9 +593,9 @@ Visit `http://localhost:8000/docs` for interactive Swagger UI documentation with
 ## 📋 **Response Format Notes**
 
 ### **Prediction Values**
-- **Single Prediction**: Returns `-1` for anomaly, `1` for normal
-- **Batch Prediction**: Returns `true` for anomaly, `false` for normal (boolean array)
+- **Both Single & Batch Predictions**: Return `true` for anomaly, `false` for normal (boolean array)
 - **Anomaly Scores**: Range from 0-1, where higher values indicate more anomalous behavior
+- **Uniform Structure**: Both endpoints return the same response structure for consistency
 
 ### **Model ID Format**
 - **Format**: `generic_{algorithm}_{timestamp}`

@@ -239,8 +239,13 @@ async def predict_anomaly(request: GenericPredictionRequest):
         
         return {
             "model_id": request.model_id,
-            "prediction": result['predictions'][0],
-            "anomaly_score": result['anomaly_scores'][0],
+            "predictions": {
+                "predictions": [result['predictions'][0]],
+                "scores": [result['scores'][0]],
+                "anomaly_count": result['anomaly_count'],
+                "anomaly_rate": result['anomaly_rate'],
+                "prediction_analysis": result['prediction_analysis']
+            },
             "timestamp": datetime.now().isoformat()
         }
         

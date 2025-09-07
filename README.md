@@ -150,8 +150,19 @@ curl -X POST "http://localhost:8000/predict" \
 ```json
 {
   "model_id": "generic_isolation_forest_20240101_120000",
-  "prediction": -1,
-  "anomaly_score": 0.15,
+  "predictions": {
+    "predictions": [true],
+    "scores": [0.15],
+    "anomaly_count": 1,
+    "anomaly_rate": 1.0,
+    "prediction_analysis": {
+      "ENTITY_001": {
+        "anomaly_count": 1,
+        "anomaly_rate": 1.0,
+        "avg_score": 0.15
+      }
+    }
+  },
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
@@ -196,10 +207,11 @@ curl -X POST "http://localhost:8000/predict-batch" \
 ```
 
 ### **Response Format Notes**
-- **Single Prediction**: Returns `-1` for anomaly, `1` for normal
-- **Batch Prediction**: Returns `true`/`false` boolean array for anomalies
+- **Uniform Structure**: Both single and batch predictions return the same response format
+- **Predictions**: Returns `true`/`false` boolean array for anomalies
 - **Anomaly Scores**: Range 0-1, higher = more anomalous
 - **Model ID Format**: `generic_{algorithm}_{timestamp}`
+- **Consistent API**: Same structure makes integration easier for developers
 
 ## 🤖 **Available Algorithms**
 
