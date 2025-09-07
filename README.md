@@ -213,6 +213,102 @@ curl -X POST "http://localhost:8000/predict-batch" \
 - **Model ID Format**: `generic_{algorithm}_{timestamp}`
 - **Consistent API**: Same structure makes integration easier for developers
 
+### **Understanding Batch Prediction (1 Row Per Entity)**
+When you send **exactly 1 row per entity ID** (common scenario):
+
+**Input Example:**
+```json
+{
+  "model_id": "your_model_id",
+  "data": [
+    {"entity_id": "FUND_001", "value": 1000, "rating": 4.5, "date": "2024-01-01"},
+    {"entity_id": "FUND_002", "value": 800, "rating": 3.2, "date": "2024-01-01"},
+    {"entity_id": "FUND_003", "value": 1200, "rating": 4.8, "date": "2024-01-01"}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "model_id": "generic_isolation_forest_20240101_120000",
+  "predictions": {
+    "predictions": [true, false, true],
+    "scores": [0.85, 0.15, 0.92],
+    "anomaly_count": 2,
+    "anomaly_rate": 0.67,
+    "prediction_analysis": {
+      "FUND_001": {
+        "anomaly_count": 1,
+        "anomaly_rate": 1.0,
+        "avg_score": 0.85,
+        "max_score": 0.85,
+        "min_score": 0.85
+      },
+      "FUND_002": {
+        "anomaly_count": 0,
+        "anomaly_rate": 0.0,
+        "avg_score": 0.15,
+        "max_score": 0.15,
+        "min_score": 0.15
+      },
+      "FUND_003": {
+        "anomaly_count": 1,
+        "anomaly_rate": 1.0,
+        "avg_score": 0.92,
+        "max_score": 0.92,
+        "min_score": 0.92
+      }
+    }
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+**Key Metrics Explained:**
+- **`predictions`**: `[true, false, true]` - one boolean per entity (FUND_001=anomalous, FUND_002=normal, FUND_003=anomalous)
+- **`scores`**: `[0.85, 0.15, 0.92]` - confidence level for each entity (higher = more anomalous)
+- **`anomaly_count`**: `2` - total entities that are anomalous
+- **`anomaly_rate`**: `0.67` - percentage of entities that are anomalous (67%)
+- **`prediction_analysis`**: Per-entity breakdown where each entity shows:
+  - `anomaly_count`: 0 or 1 (since only 1 row per entity)
+  - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
+  - `avg_score`, `max_score`, `min_score`: All identical (since only 1 row per entity)
+
+### **Real-World Use Cases**
+
+#### **Daily Fund Rating Check**
+```bash
+# Check all funds' ratings for today
+curl -X POST "http://localhost:8000/predict-batch" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "your_model_id",
+    "data": [
+      {"entity_id": "FUND_001", "rating": 4.5, "value": 1000, "date": "2024-01-15"},
+      {"entity_id": "FUND_002", "rating": 3.2, "value": 800, "date": "2024-01-15"},
+      {"entity_id": "FUND_003", "rating": 4.8, "value": 1200, "date": "2024-01-15"}
+    ]
+  }'
+```
+**Result**: 2 out of 3 funds have anomalous ratings today (67% anomaly rate)
+
+#### **Customer Transaction Analysis**
+```bash
+# Check if each customer's transaction is anomalous
+curl -X POST "http://localhost:8000/predict-batch" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "your_model_id",
+    "data": [
+      {"customer_id": "CUST_001", "amount": 1000, "frequency": 5, "date": "2024-01-15"},
+      {"customer_id": "CUST_002", "amount": 50, "frequency": 2, "date": "2024-01-15"},
+      {"customer_id": "CUST_003", "amount": 5000, "frequency": 1, "date": "2024-01-15"}
+    ]
+  }'
+```
+**Result**: 1 out of 3 customers has anomalous transaction patterns (33% anomaly rate)
+
 ## 🤖 **Available Algorithms**
 
 | Algorithm | Type | Best For | Performance |
