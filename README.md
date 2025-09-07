@@ -48,6 +48,17 @@ Based on comprehensive testing with real-world data:
 
 **Supervised learning provides 200-400% better accuracy when labels are available!**
 
+## 🎯 **Response Format**
+
+The API returns clean, JSON-serializable responses with:
+
+- **Summary Statistics**: `anomaly_count`, `anomaly_rate` at the top level
+- **Entity Analysis**: Per-entity breakdown in `prediction_analysis`
+- **Input Data**: Original values that triggered anomalies in `input_attributes`
+- **Confidence Levels**: Clear breakdown of anomaly confidence
+- **No Complex Arrays**: Removed confusing prediction/indicator arrays
+- **Perfect JSON**: All data types serialize correctly for APIs and databases
+
 ## 🎯 **Use Cases**
 
 ### **1. Fund Rating Anomaly Detection**
@@ -184,8 +195,6 @@ curl -X POST "http://localhost:8000/predict-batch" \
       {"entity_id": "ENTITY_001", "value": 1000, "rating": 4.5, "date": "2024-01-01"},
       {"entity_id": "ENTITY_002", "value": 500, "rating": 2.1, "date": "2024-01-01"}
     ],
-    "include_predictions": true,
-    "include_scores": true,
     "page": 1,
     "page_size": 100,
     "summary_only": false
@@ -359,12 +368,15 @@ When you send **exactly 1 row per entity ID** (common scenario):
 - **`MEDIUM_CONFIDENCE_ANOMALY`**: Anomaly detected with medium confidence  
 - **`HIGH_CONFIDENCE_ANOMALY`**: Anomaly detected with high confidence
 
-**Benefits of Restructured Format:**
+**Benefits of Clean Response Format:**
 - **Cleaner Structure**: Only summary stats at top level, details in prediction_analysis
 - **Easy Entity Lookup**: Find results for specific entities quickly
 - **Reduced Response Size**: No large arrays for thousands of records
 - **Better Organization**: All entity-specific data grouped together
 - **Scalable**: Works efficiently with large datasets
+- **JSON Serializable**: All data types serialize perfectly for APIs and databases
+- **Input Data Included**: See actual values that triggered anomalies for better analysis
+- **Confidence Levels**: Clear breakdown of anomaly confidence for better decision making
 
 ### **Real-World Use Cases**
 
