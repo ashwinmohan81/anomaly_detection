@@ -176,8 +176,8 @@ def test_full_workflow():
             
         single_result = response.json()
         print(f"   ✅ Single prediction successful")
-        print(f"   Prediction: {single_result['predictions']['predictions']}")
-        print(f"   Score: {single_result['predictions']['scores']}")
+        print(f"   Prediction: {single_result['predictions']['predictions_by_entity']}")
+        print(f"   Score: {single_result['predictions']['scores_by_entity']}")
         
         # 5. Batch prediction
         print("5. Batch Prediction")
@@ -198,9 +198,9 @@ def test_full_workflow():
             
         batch_result = response.json()
         print(f"   ✅ Batch prediction successful")
-        print(f"   Predictions: {batch_result['predictions']['predictions']}")
-        print(f"   Anomaly count: {batch_result['predictions']['anomaly_count']}")
-        print(f"   Anomaly rate: {batch_result['predictions']['anomaly_rate']}")
+        print(f"   Predictions: {batch_result['predictions_by_entity']}")
+        print(f"   Anomaly count: {batch_result['anomaly_count']}")
+        print(f"   Anomaly rate: {batch_result['anomaly_rate']}")
         
         # 6. Get model info
         print("6. Get Model Info")

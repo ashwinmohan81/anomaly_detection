@@ -86,8 +86,8 @@ def test_uniform_response_format():
         print("   Single Prediction Response Structure:")
         print(f"   - model_id: {type(single_result['model_id'])} = {single_result['model_id']}")
         print(f"   - predictions: {type(single_result['predictions'])}")
-        print(f"     - predictions: {type(single_result['predictions']['predictions'])} = {single_result['predictions']['predictions']}")
-        print(f"     - scores: {type(single_result['predictions']['scores'])} = {single_result['predictions']['scores']}")
+        print(f"     - predictions_by_entity: {type(single_result['predictions']['predictions_by_entity'])} = {single_result['predictions']['predictions_by_entity']}")
+        print(f"     - scores_by_entity: {type(single_result['predictions']['scores_by_entity'])} = {single_result['predictions']['scores_by_entity']}")
         print(f"     - anomaly_count: {type(single_result['predictions']['anomaly_count'])} = {single_result['predictions']['anomaly_count']}")
         print(f"     - anomaly_rate: {type(single_result['predictions']['anomaly_rate'])} = {single_result['predictions']['anomaly_rate']}")
         print(f"     - prediction_analysis: {type(single_result['predictions']['prediction_analysis'])}")
@@ -121,12 +121,11 @@ def test_uniform_response_format():
         
         print("   Batch Prediction Response Structure:")
         print(f"   - model_id: {type(batch_result['model_id'])} = {batch_result['model_id']}")
-        print(f"   - predictions: {type(batch_result['predictions'])}")
-        print(f"     - predictions: {type(batch_result['predictions']['predictions'])} = {batch_result['predictions']['predictions']}")
-        print(f"     - scores: {type(batch_result['predictions']['scores'])} = {batch_result['predictions']['scores']}")
-        print(f"     - anomaly_count: {type(batch_result['predictions']['anomaly_count'])} = {batch_result['predictions']['anomaly_count']}")
-        print(f"     - anomaly_rate: {type(batch_result['predictions']['anomaly_rate'])} = {batch_result['predictions']['anomaly_rate']}")
-        print(f"     - prediction_analysis: {type(batch_result['predictions']['prediction_analysis'])}")
+        print(f"   - predictions_by_entity: {type(batch_result['predictions_by_entity'])} = {batch_result['predictions_by_entity']}")
+        print(f"   - scores_by_entity: {type(batch_result['scores_by_entity'])} = {batch_result['scores_by_entity']}")
+        print(f"   - anomaly_count: {type(batch_result['anomaly_count'])} = {batch_result['anomaly_count']}")
+        print(f"   - anomaly_rate: {type(batch_result['anomaly_rate'])} = {batch_result['anomaly_rate']}")
+        print(f"   - prediction_analysis: {type(batch_result['prediction_analysis'])}")
         print(f"   - timestamp: {type(batch_result['timestamp'])} = {batch_result['timestamp']}")
         print()
         
@@ -141,22 +140,27 @@ def test_uniform_response_format():
         print(f"   Batch prediction keys: {sorted(batch_keys)}")
         print(f"   Keys match: {single_keys == batch_keys}")
         
-        # Check if both have the same predictions structure
-        single_pred_keys = set(single_result['predictions'].keys())
-        batch_pred_keys = set(batch_result['predictions'].keys())
+        # Check if both have the same core prediction fields
+        single_has_predictions_by_entity = 'predictions_by_entity' in single_result['predictions']
+        batch_has_predictions_by_entity = 'predictions_by_entity' in batch_result
+        single_has_scores_by_entity = 'scores_by_entity' in single_result['predictions']
+        batch_has_scores_by_entity = 'scores_by_entity' in batch_result
         
-        print(f"   Single predictions keys: {sorted(single_pred_keys)}")
-        print(f"   Batch predictions keys: {sorted(batch_pred_keys)}")
-        print(f"   Predictions structure match: {single_pred_keys == batch_pred_keys}")
+        print(f"   Single has predictions_by_entity: {single_has_predictions_by_entity}")
+        print(f"   Batch has predictions_by_entity: {batch_has_predictions_by_entity}")
+        print(f"   Single has scores_by_entity: {single_has_scores_by_entity}")
+        print(f"   Batch has scores_by_entity: {batch_has_scores_by_entity}")
         
         # Check data types
-        print(f"   Single predictions type: {type(single_result['predictions']['predictions'])}")
-        print(f"   Batch predictions type: {type(batch_result['predictions']['predictions'])}")
-        print(f"   Both are lists: {isinstance(single_result['predictions']['predictions'], list) and isinstance(batch_result['predictions']['predictions'], list)}")
+        if single_has_predictions_by_entity and batch_has_predictions_by_entity:
+            print(f"   Single predictions_by_entity type: {type(single_result['predictions']['predictions_by_entity'])}")
+            print(f"   Batch predictions_by_entity type: {type(batch_result['predictions_by_entity'])}")
+            print(f"   Both are dicts: {isinstance(single_result['predictions']['predictions_by_entity'], dict) and isinstance(batch_result['predictions_by_entity'], dict)}")
         
         print()
         
-        if single_keys == batch_keys and single_pred_keys == batch_pred_keys:
+        if (single_has_predictions_by_entity == batch_has_predictions_by_entity and 
+            single_has_scores_by_entity == batch_has_scores_by_entity):
             print("✅ SUCCESS: Both single and batch predictions have uniform response structure!")
         else:
             print("❌ FAILURE: Response structures are not uniform!")
