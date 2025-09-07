@@ -150,21 +150,17 @@ curl -X POST "http://localhost:8000/predict" \
 ```json
 {
   "model_id": "generic_isolation_forest_20240101_120000",
-  "predictions": {
-    "predictions_by_entity": {
-      "ENTITY_001": [true]
-    },
-    "scores_by_entity": {
-      "ENTITY_001": [0.15]
-    },
-    "anomaly_count": 1,
-    "anomaly_rate": 1.0,
-    "prediction_analysis": {
-      "ENTITY_001": {
-        "anomaly_count": 1,
-        "anomaly_rate": 1.0,
-        "avg_score": 0.15
-      }
+  "anomaly_count": 1,
+  "anomaly_rate": 1.0,
+  "prediction_analysis": {
+    "ENTITY_001": {
+      "anomaly_count": 1,
+      "anomaly_rate": 1.0,
+      "avg_score": 0.15,
+      "max_score": 0.15,
+      "min_score": 0.15,
+      "predictions": [true],
+      "scores": [0.15]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -215,26 +211,26 @@ curl -X POST "http://localhost:8000/predict-batch" \
 ```json
 {
   "model_id": "generic_isolation_forest_20240101_120000",
-  "predictions_by_entity": {
-    "ENTITY_001": [true],
-    "ENTITY_002": [false]
-  },
-  "scores_by_entity": {
-    "ENTITY_001": [0.15],
-    "ENTITY_002": [0.85]
-  },
   "anomaly_count": 1,
   "anomaly_rate": 0.5,
   "prediction_analysis": {
     "ENTITY_001": {
       "anomaly_count": 1,
       "anomaly_rate": 1.0,
-      "avg_score": 0.15
+      "avg_score": 0.15,
+      "max_score": 0.15,
+      "min_score": 0.15,
+      "predictions": [true],
+      "scores": [0.15]
     },
     "ENTITY_002": {
       "anomaly_count": 0,
       "anomaly_rate": 0.0,
-      "avg_score": 0.85
+      "avg_score": 0.85,
+      "max_score": 0.85,
+      "min_score": 0.85,
+      "predictions": [false],
+      "scores": [0.85]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -267,41 +263,35 @@ When you send **exactly 1 row per entity ID** (common scenario):
 ```json
 {
   "model_id": "generic_isolation_forest_20240101_120000",
-  "predictions": {
-    "predictions_by_entity": {
-      "FUND_001": [true],
-      "FUND_002": [false],
-      "FUND_003": [true]
+  "anomaly_count": 2,
+  "anomaly_rate": 0.67,
+  "prediction_analysis": {
+    "FUND_001": {
+      "anomaly_count": 1,
+      "anomaly_rate": 1.0,
+      "avg_score": 0.85,
+      "max_score": 0.85,
+      "min_score": 0.85,
+      "predictions": [true],
+      "scores": [0.85]
     },
-    "scores_by_entity": {
-      "FUND_001": [0.85],
-      "FUND_002": [0.15],
-      "FUND_003": [0.92]
+    "FUND_002": {
+      "anomaly_count": 0,
+      "anomaly_rate": 0.0,
+      "avg_score": 0.15,
+      "max_score": 0.15,
+      "min_score": 0.15,
+      "predictions": [false],
+      "scores": [0.15]
     },
-    "anomaly_count": 2,
-    "anomaly_rate": 0.67,
-    "prediction_analysis": {
-      "FUND_001": {
-        "anomaly_count": 1,
-        "anomaly_rate": 1.0,
-        "avg_score": 0.85,
-        "max_score": 0.85,
-        "min_score": 0.85
-      },
-      "FUND_002": {
-        "anomaly_count": 0,
-        "anomaly_rate": 0.0,
-        "avg_score": 0.15,
-        "max_score": 0.15,
-        "min_score": 0.15
-      },
-      "FUND_003": {
-        "anomaly_count": 1,
-        "anomaly_rate": 1.0,
-        "avg_score": 0.92,
-        "max_score": 0.92,
-        "min_score": 0.92
-      }
+    "FUND_003": {
+      "anomaly_count": 1,
+      "anomaly_rate": 1.0,
+      "avg_score": 0.92,
+      "max_score": 0.92,
+      "min_score": 0.92,
+      "predictions": [true],
+      "scores": [0.92]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -309,19 +299,20 @@ When you send **exactly 1 row per entity ID** (common scenario):
 ```
 
 **Key Metrics Explained:**
-- **`predictions_by_entity`**: Predictions grouped by entity ID (FUND_001=[true], FUND_002=[false], FUND_003=[true])
-- **`scores_by_entity`**: Scores grouped by entity ID (FUND_001=[0.85], FUND_002=[0.15], FUND_003=[0.92])
 - **`anomaly_count`**: `2` - total entities that are anomalous
 - **`anomaly_rate`**: `0.67` - percentage of entities that are anomalous (67%)
 - **`prediction_analysis`**: Per-entity breakdown where each entity shows:
   - `anomaly_count`: 0 or 1 (since only 1 row per entity)
   - `anomaly_rate`: 0.0 or 1.0 (since only 1 row per entity)
   - `avg_score`, `max_score`, `min_score`: All identical (since only 1 row per entity)
+  - `predictions`: Array of boolean predictions for this entity
+  - `scores`: Array of anomaly scores for this entity
 
-**Benefits of Entity-Grouped Format:**
+**Benefits of Restructured Format:**
+- **Cleaner Structure**: Only summary stats at top level, details in prediction_analysis
 - **Easy Entity Lookup**: Find results for specific entities quickly
 - **Reduced Response Size**: No large arrays for thousands of records
-- **Better Organization**: Predictions and scores grouped by business key
+- **Better Organization**: All entity-specific data grouped together
 - **Scalable**: Works efficiently with large datasets
 
 ### **Real-World Use Cases**

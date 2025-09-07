@@ -245,19 +245,18 @@ async def predict_anomaly(request: GenericPredictionRequest):
         # Get entity ID from the input data
         entity_id = request.data[metadata['business_key']]
         
+        # Enhance prediction_analysis with detailed predictions and scores
+        enhanced_prediction_analysis = result['prediction_analysis'].copy()
+        enhanced_prediction_analysis[entity_id].update({
+            "predictions": [result['predictions'][0]],
+            "scores": [result['scores'][0]]
+        })
+        
         return {
             "model_id": request.model_id,
-            "predictions": {
-                "predictions_by_entity": {
-                    entity_id: [result['predictions'][0]]
-                },
-                "scores_by_entity": {
-                    entity_id: [result['scores'][0]]
-                },
-                "anomaly_count": result['anomaly_count'],
-                "anomaly_rate": result['anomaly_rate'],
-                "prediction_analysis": result['prediction_analysis']
-            },
+            "anomaly_count": result['anomaly_count'],
+            "anomaly_rate": result['anomaly_rate'],
+            "prediction_analysis": enhanced_prediction_analysis,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -283,18 +282,18 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             time_column=metadata['time_column']
         )
         
-        # Prepare response based on options
+        # Prepare base response
         response = {
             "model_id": request.model_id,
             "timestamp": datetime.now().isoformat(),
             "total_records": len(request.data),
             "anomaly_count": result['anomaly_count'],
-            "anomaly_rate": result['anomaly_rate'],
-            "prediction_analysis": result['prediction_analysis']
+            "anomaly_rate": result['anomaly_rate']
         }
         
         # Handle summary_only option
         if request.summary_only:
+            response["prediction_analysis"] = result['prediction_analysis']
             return response
         
         # Handle pagination and inclusion options
@@ -331,16 +330,21 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             entity_predictions[entity_id].append(prediction)
             entity_scores[entity_id].append(score)
         
-        # Add predictions and scores grouped by entity
-        if request.include_predictions:
-            response["predictions_by_entity"] = entity_predictions
-        else:
-            response["predictions_by_entity"] = None
-            
-        if request.include_scores:
-            response["scores_by_entity"] = entity_scores
-        else:
-            response["scores_by_entity"] = None
+        # Enhance prediction_analysis with detailed predictions and scores
+        enhanced_prediction_analysis = result['prediction_analysis'].copy()
+        
+        for entity_id in enhanced_prediction_analysis:
+            if request.include_predictions and entity_id in entity_predictions:
+                enhanced_prediction_analysis[entity_id]["predictions"] = entity_predictions[entity_id]
+            else:
+                enhanced_prediction_analysis[entity_id]["predictions"] = None
+                
+            if request.include_scores and entity_id in entity_scores:
+                enhanced_prediction_analysis[entity_id]["scores"] = entity_scores[entity_id]
+            else:
+                enhanced_prediction_analysis[entity_id]["scores"] = None
+        
+        response["prediction_analysis"] = enhanced_prediction_analysis
         
         return response
         

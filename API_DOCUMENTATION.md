@@ -180,23 +180,17 @@ Predict anomaly for a single data point.
 ```json
 {
   "model_id": "generic_isolation_forest_20240101_120000",
-  "predictions": {
-    "predictions_by_entity": {
-      "ENTITY_001": [true]
-    },
-    "scores_by_entity": {
-      "ENTITY_001": [0.15]
-    },
-    "anomaly_count": 1,
-    "anomaly_rate": 1.0,
-    "prediction_analysis": {
-      "ENTITY_001": {
-        "anomaly_count": 1,
-        "anomaly_rate": 1.0,
-        "avg_score": 0.15,
-        "max_score": 0.15,
-        "min_score": 0.15
-      }
+  "anomaly_count": 1,
+  "anomaly_rate": 1.0,
+  "prediction_analysis": {
+    "ENTITY_001": {
+      "anomaly_count": 1,
+      "anomaly_rate": 1.0,
+      "avg_score": 0.15,
+      "max_score": 0.15,
+      "min_score": 0.15,
+      "predictions": [true],
+      "scores": [0.15]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
@@ -260,32 +254,26 @@ Predict anomalies for multiple data points.
 ```json
 {
   "model_id": "model_isolation_forest_20240101_120000",
-  "predictions": {
-    "predictions_by_entity": {
-      "ENTITY_001": [true],
-      "ENTITY_002": [false]
+  "anomaly_count": 1,
+  "anomaly_rate": 0.5,
+  "prediction_analysis": {
+    "ENTITY_001": {
+      "anomaly_count": 1,
+      "anomaly_rate": 1.0,
+      "avg_score": 0.15,
+      "max_score": 0.15,
+      "min_score": 0.15,
+      "predictions": [true],
+      "scores": [0.15]
     },
-    "scores_by_entity": {
-      "ENTITY_001": [0.15],
-      "ENTITY_002": [0.85]
-    },
-    "anomaly_count": 1,
-    "anomaly_rate": 0.5,
-    "prediction_analysis": {
-      "ENTITY_001": {
-        "anomaly_count": 1,
-        "anomaly_rate": 1.0,
-        "avg_score": 0.15,
-        "max_score": 0.15,
-        "min_score": 0.15
-      },
-      "ENTITY_002": {
-        "anomaly_count": 0,
-        "anomaly_rate": 0.0,
-        "avg_score": 0.85,
-        "max_score": 0.85,
-        "min_score": 0.85
-      }
+    "ENTITY_002": {
+      "anomaly_count": 0,
+      "anomaly_rate": 0.0,
+      "avg_score": 0.85,
+      "max_score": 0.85,
+      "min_score": 0.85,
+      "predictions": [false],
+      "scores": [0.85]
     }
   },
   "timestamp": "2024-01-01T12:00:00.000Z"
