@@ -146,6 +146,16 @@ curl -X POST "http://localhost:8000/predict" \
   }'
 ```
 
+**Response:**
+```json
+{
+  "model_id": "generic_isolation_forest_20240101_120000",
+  "prediction": -1,
+  "anomaly_score": 0.15,
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
 #### **Batch Prediction**
 ```bash
 curl -X POST "http://localhost:8000/predict-batch" \
@@ -158,6 +168,38 @@ curl -X POST "http://localhost:8000/predict-batch" \
     ]
   }'
 ```
+
+**Response:**
+```json
+{
+  "model_id": "generic_isolation_forest_20240101_120000",
+  "predictions": {
+    "predictions": [true, false],
+    "scores": [0.15, 0.85],
+    "anomaly_count": 1,
+    "anomaly_rate": 0.5,
+    "prediction_analysis": {
+      "ENTITY_001": {
+        "anomaly_count": 1,
+        "anomaly_rate": 1.0,
+        "avg_score": 0.15
+      },
+      "ENTITY_002": {
+        "anomaly_count": 0,
+        "anomaly_rate": 0.0,
+        "avg_score": 0.85
+      }
+    }
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### **Response Format Notes**
+- **Single Prediction**: Returns `-1` for anomaly, `1` for normal
+- **Batch Prediction**: Returns `true`/`false` boolean array for anomalies
+- **Anomaly Scores**: Range 0-1, higher = more anomalous
+- **Model ID Format**: `generic_{algorithm}_{timestamp}`
 
 ## 🤖 **Available Algorithms**
 
@@ -241,7 +283,7 @@ The tests generate:
 
 ## 📚 **API Documentation**
 
-### **Core Endpoints**
+### **Quick Reference**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -255,13 +297,13 @@ The tests generate:
 | `GET` | `/models/{model_id}` | Get model info |
 | `DELETE` | `/models/{model_id}` | Delete model |
 | `POST` | `/models/{model_id}/load` | Load model |
-
-### **Utility Endpoints**
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
 | `GET` | `/algorithms` | List available algorithms |
 | `GET` | `/examples` | Get example use cases |
+
+### **Detailed Documentation**
+- **📖 Complete API Reference**: See `API_DOCUMENTATION.md` for detailed request/response formats
+- **🔧 Interactive Docs**: Visit `http://localhost:8000/docs` for Swagger UI
+- **🧪 Test Scripts**: Run `python3 test_api_response_format.py` to verify responses
 
 ## 🔍 **Data Format Requirements**
 
