@@ -203,7 +203,7 @@ curl -X POST "http://localhost:8000/predict-batch" \
 
 #### **Large Dataset Options**
 ```bash
-# Summary only (no detailed predictions/scores)
+# Summary only (no detailed prediction analysis)
 curl -X POST "http://localhost:8000/predict-batch" \
   -H "Content-Type: application/json" \
   -d '{
@@ -310,9 +310,7 @@ When you send **exactly 1 row per entity ID** (common scenario):
         "rating": 2.1,
         "size": 2500,
         "date": "2024-01-01"
-      },
-      "predictions": [true],
-      "scores": [0.85]
+      }
     },
     "FUND_002": {
       "anomaly_count": 0,
@@ -328,9 +326,7 @@ When you send **exactly 1 row per entity ID** (common scenario):
         "rating": 4.5,
         "size": 5000,
         "date": "2024-01-01"
-      },
-      "predictions": [false],
-      "scores": [0.15]
+      }
     },
     "FUND_003": {
       "anomaly_count": 1,
