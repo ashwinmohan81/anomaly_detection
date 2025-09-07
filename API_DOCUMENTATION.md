@@ -181,8 +181,12 @@ Predict anomaly for a single data point.
 {
   "model_id": "generic_isolation_forest_20240101_120000",
   "predictions": {
-    "predictions": [true],
-    "scores": [0.15],
+    "predictions_by_entity": {
+      "ENTITY_001": [true]
+    },
+    "scores_by_entity": {
+      "ENTITY_001": [0.15]
+    },
     "anomaly_count": 1,
     "anomaly_rate": 1.0,
     "prediction_analysis": {
@@ -234,17 +238,37 @@ Predict anomalies for multiple data points.
       "rating": 2.1,
       "date": "2024-01-01"
     }
-  ]
+  ],
+  "include_predictions": true,
+  "include_scores": true,
+  "page": 1,
+  "page_size": 100,
+  "summary_only": false
 }
 ```
+
+**Request Parameters:**
+- `model_id` (string): ID of the model to use for prediction
+- `data` (array): Array of data records to predict on
+- `include_predictions` (boolean, optional): Whether to include predictions array (default: true)
+- `include_scores` (boolean, optional): Whether to include scores array (default: true)
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `page_size` (integer, optional): Number of records per page (default: 100)
+- `summary_only` (boolean, optional): Return only summary statistics (default: false)
 
 **Response:**
 ```json
 {
   "model_id": "model_isolation_forest_20240101_120000",
   "predictions": {
-    "predictions": [true, false],
-    "scores": [0.15, 0.85],
+    "predictions_by_entity": {
+      "ENTITY_001": [true],
+      "ENTITY_002": [false]
+    },
+    "scores_by_entity": {
+      "ENTITY_001": [0.15],
+      "ENTITY_002": [0.85]
+    },
     "anomaly_count": 1,
     "anomaly_rate": 0.5,
     "prediction_analysis": {

@@ -62,6 +62,11 @@ class GenericPredictionRequest(BaseModel):
 class GenericBatchPredictionRequest(BaseModel):
     model_id: str
     data: List[Dict[str, Any]]
+    include_predictions: Optional[bool] = True  # Whether to include full predictions array
+    include_scores: Optional[bool] = True      # Whether to include full scores array
+    page: Optional[int] = 1                    # Page number for pagination
+    page_size: Optional[int] = 100             # Number of records per page
+    summary_only: Optional[bool] = False       # Return only summary statistics
 
 class GenericModelInfo(BaseModel):
     model_id: str
@@ -237,11 +242,18 @@ async def predict_anomaly(request: GenericPredictionRequest):
             time_column=metadata['time_column']
         )
         
+        # Get entity ID from the input data
+        entity_id = request.data[metadata['business_key']]
+        
         return {
             "model_id": request.model_id,
             "predictions": {
-                "predictions": [result['predictions'][0]],
-                "scores": [result['scores'][0]],
+                "predictions_by_entity": {
+                    entity_id: [result['predictions'][0]]
+                },
+                "scores_by_entity": {
+                    entity_id: [result['scores'][0]]
+                },
                 "anomaly_count": result['anomaly_count'],
                 "anomaly_rate": result['anomaly_rate'],
                 "prediction_analysis": result['prediction_analysis']
@@ -255,7 +267,7 @@ async def predict_anomaly(request: GenericPredictionRequest):
 
 @app.post("/predict-batch")
 async def predict_batch(request: GenericBatchPredictionRequest):
-    """Predict anomalies for multiple data points."""
+    """Predict anomalies for multiple data points with pagination and summary options."""
     try:
         if request.model_id not in models:
             raise HTTPException(status_code=404, detail="Model not found")
@@ -271,11 +283,66 @@ async def predict_batch(request: GenericBatchPredictionRequest):
             time_column=metadata['time_column']
         )
         
-        return {
+        # Prepare response based on options
+        response = {
             "model_id": request.model_id,
-            "predictions": result,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "total_records": len(request.data),
+            "anomaly_count": result['anomaly_count'],
+            "anomaly_rate": result['anomaly_rate'],
+            "prediction_analysis": result['prediction_analysis']
         }
+        
+        # Handle summary_only option
+        if request.summary_only:
+            return response
+        
+        # Handle pagination and inclusion options
+        predictions = result['predictions']
+        scores = result['scores']
+        
+        # Calculate pagination
+        total_records = len(predictions)
+        start_idx = (request.page - 1) * request.page_size
+        end_idx = min(start_idx + request.page_size, total_records)
+        
+        # Add pagination info
+        response.update({
+            "pagination": {
+                "page": request.page,
+                "page_size": request.page_size,
+                "total_pages": (total_records + request.page_size - 1) // request.page_size,
+                "has_next": end_idx < total_records,
+                "has_previous": request.page > 1
+            }
+        })
+        
+        # Group predictions and scores by entity ID
+        entity_predictions = {}
+        entity_scores = {}
+        
+        for i, (prediction, score) in enumerate(zip(predictions, scores)):
+            entity_id = df.iloc[i][metadata['business_key']]
+            
+            if entity_id not in entity_predictions:
+                entity_predictions[entity_id] = []
+                entity_scores[entity_id] = []
+            
+            entity_predictions[entity_id].append(prediction)
+            entity_scores[entity_id].append(score)
+        
+        # Add predictions and scores grouped by entity
+        if request.include_predictions:
+            response["predictions_by_entity"] = entity_predictions
+        else:
+            response["predictions_by_entity"] = None
+            
+        if request.include_scores:
+            response["scores_by_entity"] = entity_scores
+        else:
+            response["scores_by_entity"] = None
+        
+        return response
         
     except Exception as e:
         logger.error(f"Error making batch prediction: {str(e)}")
